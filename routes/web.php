@@ -1,0 +1,167 @@
+<?php
+
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ClientController;
+use App\Http\Controllers\CourierController;
+use App\Http\Controllers\CourierManagementController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DistributorController;
+use App\Http\Controllers\ExpeditionController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SalesController;
+use App\Http\Controllers\TestController;
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| 1. AREA PUBLIK (Bisa diakses siapa saja / Tamu)
+|--------------------------------------------------------------------------
+*/
+
+// Halaman Utama (Landing Page)
+Route::get('/', function () {
+    return view('welcome', ['title' => 'Welcome to Madura Mart']);
+})->name('root');
+
+// Landing Page Publik (Storefront)
+Route::get('/home', [HomeController::class, 'index'])->name('home');
+
+// Halaman Mizuki (Info/Profil?)
+Route::get('/mizuki', function () {
+    return view('mizuki', ['title' => 'Mizuki']);
+})->name('mizuki');
+
+// Utility: Logout dulu sebelum register kurir (agar session bersih)
+Route::get('/register-courier-logout', [AuthController::class, 'logoutAndRedirectCourier'])->name('register.courier.logout');
+
+/*
+|--------------------------------------------------------------------------
+| 2. AREA TAMU (GUEST) - Hanya bisa diakses jika BELUM login
+|--------------------------------------------------------------------------
+*/
+Route::middleware('guest')->group(function () {
+    // Login
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+
+    // Register Customer (Langsung Aktif)
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+
+    // Register Courier (Pending / Lamaran)
+    Route::get('/register-courier', function () {
+        return view('auth.register-courier', ['title' => 'Courier Application']);
+    })->name('register.courier');
+
+    // Action POST untuk Courier
+    Route::post('/register-courier', [AuthController::class, 'storeCourier'])->name('register.courier.store');
+});
+
+/*
+|--------------------------------------------------------------------------
+| 3. AREA LOGIN (AUTHENTICATED) - Semua user yg login bisa akses ini
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->group(function () {
+    // Logout
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Halaman Depan Toko — sekarang ditangani oleh HomeController di area publik
+
+    Route::get('/profile', [UserController::class, 'profile'])->name('profile');
+    Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
+});
+
+/*
+|--------------------------------------------------------------------------
+| 4. AREA ADMIN & OWNER (Dashboard Pusat)
+|--------------------------------------------------------------------------
+| Akses: Owner dan Admin.
+| Courier & Customer DILARANG MASUK.
+*/
+Route::middleware(['auth', 'role:owner,admin'])->group(function () {
+
+    // Dashboard Utama
+    Route::resource('dashboard', DashboardController::class);
+
+    // Modul Produk (Master Barang)
+    Route::put('/products/{id}/toggle', [ProductController::class, 'toggleStatus'])->name('products.toggle');
+    Route::post('/products/check-unique', [ProductController::class, 'checkUnique'])->name('products.check-unique');
+    Route::resource('products', ProductController::class);
+
+    // Modul Distributor (Supplier)
+    Route::post('/distributors/check-duplicate', [DistributorController::class, 'checkDuplicate'])->name('distributors.check-duplicate');
+    Route::post('/distributors/check-unique', [DistributorController::class, 'checkUnique'])->name('distributors.check-unique');
+    Route::resource('distributors', DistributorController::class);
+
+    // Modul Purchase (Kulakan Barang Masuk)
+    Route::post('/purchase/check-unique', [PurchaseController::class, 'checkUniqueNoteNumber'])->name('purchase.check-unique');
+    Route::resource('purchase', PurchaseController::class);
+
+    // Modul Sales (Kasir Barang Keluar)
+    Route::resource('sales', SalesController::class);
+
+    // Modul Orders
+    Route::resource('orders', OrderController::class);
+
+    // =====================================================
+    // Modul Clients (Customer Management)
+    // =====================================================
+    Route::resource('clients', ClientController::class);
+
+    // =====================================================
+    // Modul Courier Management (Admin Panel)
+    // =====================================================
+    Route::resource('courier-management', CourierManagementController::class)->only(['index', 'update', 'destroy']);
+    Route::resource('expeditions', ExpeditionController::class);
+
+    // =====================================================
+    // Modul Laporan (Reports)
+    // =====================================================
+    Route::prefix('reports')->name('reports.')->group(function () {
+        // Sale Reports
+        Route::get('/sale', [ReportController::class, 'saleReport'])->name('sale');
+        Route::get('/sale/print', [ReportController::class, 'printSaleReport'])->name('sale.print');
+
+        // Distributor Reports
+        Route::get('/distributor', [ReportController::class, 'distributorReport'])->name('distributor');
+        Route::get('/distributor/print', [ReportController::class, 'printDistributorReport'])->name('distributor.print');
+
+        // Product Reports
+        Route::get('/product', [ReportController::class, 'productReport'])->name('product');
+
+        // Order Reports
+        Route::get('/order', [ReportController::class, 'orderReport'])->name('order');
+    });
+
+    // Test Controller
+    Route::resource('test', TestController::class);
+});
+
+/*
+|--------------------------------------------------------------------------
+| 5. AREA KHUSUS KURIR (Workspace Lapangan)
+|--------------------------------------------------------------------------
+| Akses: Hanya Courier.
+*/
+Route::middleware(['auth', 'role:courier'])->prefix('courier')->name('courier.')->group(function () {
+    Route::get('/', [CourierController::class, 'index'])->name('index');
+    Route::get('/orders/{id}', [CourierController::class, 'show'])->name('show');
+    Route::put('/orders/{id}', [CourierController::class, 'update'])->name('update');
+});
+
+/*
+|--------------------------------------------------------------------------
+| 6. AREA KHUSUS OWNER (Super Admin)
+|--------------------------------------------------------------------------
+| Akses: HANYA OWNER.
+| Admin TIDAK BISA akses ini (Proteksi agar Admin tidak bisa edit/hapus user lain).
+*/
+Route::middleware(['auth', 'role:owner'])->group(function () {
+    Route::resource('users', UserController::class);
+});
