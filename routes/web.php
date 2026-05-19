@@ -44,10 +44,10 @@ Route::get('/register-courier-logout', [AuthController::class, 'logoutAndRedirec
 | 2. AREA TAMU (GUEST) - Hanya bisa diakses jika BELUM login
 |--------------------------------------------------------------------------
 */
-Route::middleware('guest')->group(function () {
+// Route::middleware('guest')->group(function () {
     // Login
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    // Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    // Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
     // Register Customer (Langsung Aktif)
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
@@ -60,14 +60,14 @@ Route::middleware('guest')->group(function () {
 
     // Action POST untuk Courier
     Route::post('/register-courier', [AuthController::class, 'storeCourier'])->name('register.courier.store');
-});
+// });
 
 /*
 |--------------------------------------------------------------------------
 | 3. AREA LOGIN (AUTHENTICATED) - Semua user yg login bisa akses ini
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')->group(function () {
+// Route::middleware('auth')->group(function () {
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -75,7 +75,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/profile', [UserController::class, 'profile'])->name('profile');
     Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
-});
+// });
 
 /*
 |--------------------------------------------------------------------------
@@ -84,7 +84,7 @@ Route::middleware('auth')->group(function () {
 | Akses: Owner dan Admin.
 | Courier & Customer DILARANG MASUK.
 */
-Route::middleware(['auth', 'role:owner,admin'])->group(function () {
+// Route::middleware(['auth', 'role:owner,admin'])->group(function () {
 
     // Dashboard Utama
     Route::resource('dashboard', DashboardController::class);
@@ -101,6 +101,10 @@ Route::middleware(['auth', 'role:owner,admin'])->group(function () {
 
     // Modul Purchase (Kulakan Barang Masuk)
     Route::post('/purchase/check-unique', [PurchaseController::class, 'checkUniqueNoteNumber'])->name('purchase.check-unique');
+
+    // Route AJAX untuk Verifikasi Password Atasan (Dipanggil saat Edit/Hapus Purchase)
+    Route::post('/purchase/check-boss-password', [PurchaseController::class, 'checkBossPassword'])->name('purchase.check-boss-password');
+
     Route::resource('purchase', PurchaseController::class);
 
     // Modul Sales (Kasir Barang Keluar)
@@ -141,7 +145,7 @@ Route::middleware(['auth', 'role:owner,admin'])->group(function () {
 
     // Test Controller
     Route::resource('test', TestController::class);
-});
+// });
 
 /*
 |--------------------------------------------------------------------------
@@ -149,7 +153,8 @@ Route::middleware(['auth', 'role:owner,admin'])->group(function () {
 |--------------------------------------------------------------------------
 | Akses: Hanya Courier.
 */
-Route::middleware(['auth', 'role:courier'])->prefix('courier')->name('courier.')->group(function () {
+// Route::middleware(['auth', 'role:courier'])->prefix('courier')->name('courier.')->group(function () {
+Route::prefix('courier')->name('courier.')->group(function () {
     Route::get('/', [CourierController::class, 'index'])->name('index');
     Route::get('/orders/{id}', [CourierController::class, 'show'])->name('show');
     Route::put('/orders/{id}', [CourierController::class, 'update'])->name('update');
@@ -162,6 +167,6 @@ Route::middleware(['auth', 'role:courier'])->prefix('courier')->name('courier.')
 | Akses: HANYA OWNER.
 | Admin TIDAK BISA akses ini (Proteksi agar Admin tidak bisa edit/hapus user lain).
 */
-Route::middleware(['auth', 'role:owner'])->group(function () {
+// Route::middleware(['auth', 'role:owner'])->group(function () {
     Route::resource('users', UserController::class);
-});
+// });

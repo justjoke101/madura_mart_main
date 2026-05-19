@@ -12,9 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         // --- DAFTARKAN MIDDLEWARE DISINI ---
-        $middleware->alias([
-            'role' => \App\Http\Middleware\CheckRole::class,
-        ]);
+        // $middleware->alias([
+        //     'role' => \App\Http\Middleware\CheckRole::class,
+        // ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

@@ -211,7 +211,7 @@
         {{-- AREA PRIVASI OWNER (HANYA OWNER YANG BISA LIHAT) --}}
         {{-- ========================================================= --}}
 
-        @if (auth()->user()->role == 'owner')
+        @if (auth()->user()?->role == 'owner')
             {{-- USERS --}}
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('users*') ? 'active' : '' }}" href="{{ route('users.index') }}">
