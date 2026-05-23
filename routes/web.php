@@ -102,9 +102,15 @@ Route::get('/register-courier-logout', [AuthController::class, 'logoutAndRedirec
     // Modul Purchase (Kulakan Barang Masuk)
     Route::post('/purchase/check-unique', [PurchaseController::class, 'checkUniqueNoteNumber'])->name('purchase.check-unique');
 
-    // Route AJAX untuk Verifikasi Password Atasan (Dipanggil saat Edit/Hapus Purchase)
+    // ⭐ JELASKAN 1: Route ini untuk mengecek password atasan via AJAX.
+    // Saat user klik Edit/Delete, JavaScript akan mengirim password ke URL ini.
+    // Lalu PurchaseController@checkBossPassword akan mengecek passwordnya benar atau salah.
     Route::post('/purchase/check-boss-password', [PurchaseController::class, 'checkBossPassword'])->name('purchase.check-boss-password');
 
+    // ⭐ JELASKAN 2: Route::resource otomatis membuat 7 route CRUD, termasuk:
+    // - GET /purchase/{id}/edit  → method edit()  (tampil form edit)
+    // - PUT /purchase/{id}       → method update() (proses update data)
+    // - DELETE /purchase/{id}    → method destroy() (proses hapus data)
     Route::resource('purchase', PurchaseController::class);
 
     // Modul Sales (Kasir Barang Keluar)
